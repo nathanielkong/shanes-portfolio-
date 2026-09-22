@@ -1,0 +1,228 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Instrument+Serif:ital@0;1&family=Nanum+Myeongjo:wght@700&family=Poppins:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,400&display=swap");
+
+:root {
+  --design-width: 1024px;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: #fff;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #fff;
+  color: #282828;
+  font-family: Poppins, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: #c8b8a5;
+  color: #211b18;
+}
+
+.portfolio-shell {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: #fff;
+}
+
+.portfolio-stage {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: var(--design-width);
+  transform-origin: top left;
+}
+
+.portfolio-stage .page {
+  position: relative !important;
+  display: block;
+  width: var(--design-width) !important;
+  margin: 0;
+  overflow: hidden;
+}
+
+.portfolio-stage .page-fixed-bg-container,
+.portfolio-stage .fixed-position-container-top,
+.portfolio-stage .fixed-position-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.portfolio-stage .widget-background {
+  position: absolute;
+  inset: 0;
+}
+
+.portfolio-stage .content-scroll-wrapper,
+.portfolio-stage .content-bounds {
+  position: relative;
+  width: var(--design-width) !important;
+}
+
+.portfolio-stage .page-content-container {
+  position: absolute;
+  width: var(--design-width) !important;
+  transform-origin: top left;
+}
+
+.portfolio-stage .animation-container,
+.portfolio-stage .rmwidget {
+  position: absolute;
+}
+
+.portfolio-stage .animation-container {
+  transition: opacity 700ms ease, transform 700ms cubic-bezier(0.2, 0.75, 0.2, 1);
+}
+
+.portfolio-stage .animation-container.reveal {
+  opacity: 0 !important;
+  transform: translateY(22px);
+}
+
+.portfolio-stage .animation-container.reveal.is-visible {
+  opacity: 1 !important;
+  transform: translateY(0);
+}
+
+.portfolio-stage .widget-picture,
+.portfolio-stage .widget-picture img,
+.portfolio-stage .video img {
+  display: block;
+}
+
+.portfolio-stage .widget-picture img,
+.portfolio-stage .video img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.portfolio-stage .widget-shape svg {
+  display: block;
+}
+
+.portfolio-stage p,
+.portfolio-stage h1,
+.portfolio-stage h2,
+.portfolio-stage h3,
+.portfolio-stage h4,
+.portfolio-stage h5 {
+  margin: 0;
+}
+
+.portfolio-stage .align-left {
+  text-align: left;
+}
+
+.portfolio-stage .align-center {
+  text-align: center;
+}
+
+.portfolio-stage .align-right {
+  text-align: right;
+}
+
+.portfolio-stage a {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.portfolio-stage a:hover {
+  opacity: 0.68;
+}
+
+.portfolio-stage .common-button,
+.portfolio-stage [role="button"] {
+  cursor: pointer;
+}
+
+.portfolio-stage .widget-slideshow,
+.portfolio-stage .common-slideshow,
+.portfolio-stage .images,
+.portfolio-stage .images-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.portfolio-stage .images-wrapper > .image {
+  position: absolute;
+  inset: 0;
+  display: none;
+  width: 100% !important;
+  height: 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover !important;
+  transform: none !important;
+}
+
+.portfolio-stage .images-wrapper > .portfolio-active-slide {
+  display: block;
+}
+
+.portfolio-stage .prev-picture-arrow-middle,
+.portfolio-stage .next-picture-arrow-middle {
+  position: absolute;
+  top: 50%;
+  z-index: 8;
+  display: grid !important;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(80, 80, 80, 0.5);
+}
+
+.portfolio-stage .prev-picture-arrow-middle {
+  left: 8px;
+}
+
+.portfolio-stage .next-picture-arrow-middle {
+  right: 8px;
+}
+
+.portfolio-stage .prev-picture-arrow-middle img,
+.portfolio-stage .next-picture-arrow-middle img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.portfolio-stage .video .css-11k8whg,
+.portfolio-stage .video .css-11k8whg img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portfolio-stage .video .react-player__preview {
+  position: relative;
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .portfolio-stage .animation-container {
+    transition: none;
+  }
+}
