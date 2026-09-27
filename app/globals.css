@@ -81,18 +81,16 @@ body {
   position: absolute;
 }
 
-.portfolio-stage .animation-container {
-  transition: opacity 700ms ease, transform 700ms cubic-bezier(0.2, 0.75, 0.2, 1);
+.portfolio-stage .portfolio-motion {
+  backface-visibility: hidden;
+  transition:
+    opacity 900ms ease-out,
+    transform 900ms cubic-bezier(0.2, 0.74, 0.2, 1);
+  will-change: opacity, transform;
 }
 
-.portfolio-stage .animation-container.reveal {
-  opacity: 0 !important;
-  transform: translateY(22px);
-}
-
-.portfolio-stage .animation-container.reveal.is-visible {
-  opacity: 1 !important;
-  transform: translateY(0);
+.portfolio-stage .portfolio-motion.is-visible {
+  will-change: auto;
 }
 
 .portfolio-stage .widget-picture,
@@ -222,7 +220,7 @@ body {
     scroll-behavior: auto;
   }
 
-  .portfolio-stage .animation-container {
+  .portfolio-stage .portfolio-motion {
     transition: none;
   }
 }

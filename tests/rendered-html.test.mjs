@@ -9,8 +9,8 @@ const routes = [
   "/kiss-or-death",
   "/maruki-ramen",
   "/unbound",
-  "/bloody-health",
-  "/beauty-in-the-pot",
+  "/christmas",
+  "/soonami",
   "/contact",
 ];
 
@@ -51,6 +51,8 @@ test("server-renders the complete portfolio", async () => {
   assert.match(html, /Creative Portfolio/);
   assert.match(html, /Oopsie Daisy/);
   assert.match(html, /Sarawak Youth Talent/);
+  assert.match(html, /Christmas\/3D Design/);
+  assert.match(html, /Soonami\/Personal Branding/);
   assert.match(html, /\/assets\/[a-f0-9]+\.(?:png|jpg)/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
 });

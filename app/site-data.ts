@@ -15,14 +15,14 @@ export const portfolioPages: PortfolioPage[] = [
     title: "Creative Portfolio",
     description:
       "The creative portfolio of multimedia designer Shane Soon, specialising in advertising, branding, typography, layout, and digital design.",
-    height: 3543,
+    height: 3257,
   },
   {
     id: 2,
     slug: "oopsie-daisy",
     title: "Oopsie Daisy",
     description: "Brand identity and floral studio design for Oopsie Daisy.",
-    height: 6708,
+    height: 8251,
   },
   {
     id: 3,
@@ -30,21 +30,21 @@ export const portfolioPages: PortfolioPage[] = [
     title: "Sarawak Youth Talent",
     description:
       "A campaign, website, booklet, and merchandise project celebrating creative youth in Sarawak.",
-    height: 4469,
+    height: 4337,
   },
   {
     id: 4,
     slug: "kiss-or-death",
     title: "Kiss or Death",
     description: "A campaign against animal testing in cosmetics.",
-    height: 4242,
+    height: 3898,
   },
   {
     id: 5,
     slug: "maruki-ramen",
     title: "Maruki Ramen",
     description: "A warm, modern rebrand for Maruki Ramen.",
-    height: 3667,
+    height: 3350,
   },
   {
     id: 6,
@@ -52,29 +52,28 @@ export const portfolioPages: PortfolioPage[] = [
     title: "Unbound",
     description:
       "An editorial magazine cover inspired by architecture, culture, and public knowledge.",
-    height: 3383,
+    height: 3123,
   },
   {
     id: 7,
-    slug: "bloody-health",
-    title: "Bloody Health",
-    description: "A conceptual vitamin supplement brand designed for vampires.",
-    height: 3090,
+    slug: "christmas",
+    title: "Christmas",
+    description: "A playful festive 3D design project.",
+    height: 3116,
   },
   {
     id: 8,
-    slug: "beauty-in-the-pot",
-    title: "Beauty In The Pot",
-    description:
-      "A cohesive promotional campaign for a warm, feminine hotpot restaurant brand.",
-    height: 3719,
+    slug: "soonami",
+    title: "Soonami",
+    description: "Personal branding and identity design for Shane Soon.",
+    height: 4108,
   },
   {
     id: 9,
     slug: "contact",
     title: "Contact",
     description: "Get in touch with multimedia designer Shane Soon.",
-    height: 856,
+    height: 540,
   },
 ];
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 type PortfolioCanvasProps = {
   id: number;
@@ -11,6 +11,28 @@ type PortfolioCanvasProps = {
 };
 
 const DESIGN_WIDTH = 1024;
+
+type MotionFrame = {
+  opacity?: string;
+  transform?: string;
+};
+
+function readMotionFrame(keyframes: string, position: "0%" | "100%") {
+  const escapedPosition = position.replace("%", "\\%");
+  const body = keyframes.match(new RegExp(`${escapedPosition}\\s*\\{([^}]*)\\}`))?.[1];
+  if (!body) return {};
+
+  const frame: MotionFrame = {};
+  for (const declaration of body.split(";")) {
+    const colon = declaration.indexOf(":");
+    if (colon === -1) continue;
+    const property = declaration.slice(0, colon).trim();
+    const value = declaration.slice(colon + 1).trim();
+    if (property === "opacity") frame.opacity = value;
+    if (property === "transform") frame.transform = value;
+  }
+  return frame;
+}
 
 export function PortfolioCanvas({ id, title, height, html }: PortfolioCanvasProps) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -23,23 +45,52 @@ export function PortfolioCanvas({ id, title, height, html }: PortfolioCanvasProp
     return () => window.removeEventListener("resize", resize);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return;
 
-    const reveals = [...root.querySelectorAll<HTMLElement>(".reveal")];
+    const animated = [...root.querySelectorAll<HTMLElement>(".animation-container")]
+      .map((element) => {
+        const keyframes = element.querySelector<HTMLStyleElement>(":scope > style")?.textContent ?? "";
+        const from = readMotionFrame(keyframes, "0%");
+        const to = readMotionFrame(keyframes, "100%");
+        const isReveal = element.classList.contains("reveal");
+
+        if (!keyframes && !isReveal) return null;
+
+        const inlineOpacity = element.style.opacity || "1";
+        const inlineTransform = element.style.transform || "none";
+        const startOpacity = from.opacity ?? (isReveal ? "0" : inlineOpacity);
+        const startTransform = from.transform ?? inlineTransform;
+        const endOpacity = to.opacity ?? "1";
+        const endTransform = to.transform ?? inlineTransform;
+
+        element.classList.add("portfolio-motion");
+        element.style.setProperty("opacity", startOpacity, "important");
+        element.style.setProperty("transform", startTransform, "important");
+
+        return { element, endOpacity, endTransform };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
-            (entry.target as HTMLElement).classList.add("is-visible");
+            const motion = animated.find(({ element }) => element === entry.target);
+            if (!motion) continue;
+            requestAnimationFrame(() => {
+              motion.element.classList.add("is-visible");
+              motion.element.style.setProperty("opacity", motion.endOpacity, "important");
+              motion.element.style.setProperty("transform", motion.endTransform, "important");
+            });
             observer.unobserve(entry.target);
           }
         }
       },
-      { rootMargin: "0px 0px 12%", threshold: 0.03 },
+      { rootMargin: "0px 0px 4%", threshold: 0.03 },
     );
-    reveals.forEach((element) => observer.observe(element));
+    animated.forEach(({ element }) => observer.observe(element));
 
     const slideshow = root.querySelector<HTMLElement>(".widget-slideshow");
     const slides = slideshow
