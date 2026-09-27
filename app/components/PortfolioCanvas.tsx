@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
+import { ArchiveInteractions } from "./ArchiveInteractions";
 
 type PortfolioCanvasProps = {
   id: number;
@@ -170,6 +171,7 @@ export function PortfolioCanvas({ id, title, height, html }: PortfolioCanvasProp
         style={{ transform: `scale(${scale})` }}
         dangerouslySetInnerHTML={{ __html: html }}
       />
+      {id === 1 ? <ArchiveInteractions rootRef={rootRef} scale={scale} /> : null}
     </main>
   );
 }

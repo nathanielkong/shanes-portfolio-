@@ -71,3 +71,15 @@ test("every portfolio route and share asset is generated", async () => {
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   await access(new URL("../public/og.png", import.meta.url));
 });
+
+test("interactive archive artwork is available locally", async () => {
+  const manifest = await readFile(new URL("../app/project-media.ts", import.meta.url), "utf8");
+  const assetNames = [
+    ...new Set([...manifest.matchAll(/"\/assets\/([^"?]+)"/g)].map((match) => match[1])),
+  ];
+
+  assert.equal(assetNames.length, 35);
+  await Promise.all(
+    assetNames.map((assetName) => access(new URL(`../public/assets/${assetName}`, import.meta.url))),
+  );
+});
