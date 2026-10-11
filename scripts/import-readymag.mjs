@@ -7,16 +7,9 @@ const contentDir = path.join(root, "content");
 const assetsDir = path.join(root, "public", "assets");
 
 const pages = [
-  { id: 1, slug: "home", height: 3257, url: "https://c-p.rmcdn.net/6a0fe457f235cc8b4157bdb6/6357317/HtmlSnippet-4bdc756d-74dd-41e9-8a13-98c259ff9172.html" },
-  { id: 2, slug: "oopsie-daisy", height: 8251, url: "https://c-p.rmcdn.net/6a0fe457f235cc8b4157bdb6/6357317/HtmlSnippet-c43f67b8-cd93-4e79-a1c2-05881fba6284.html" },
-  { id: 3, slug: "sarawak-youth-talent", height: 4337, url: "https://c-p.rmcdn.net/6a0fe457f235cc8b4157bdb6/6357317/HtmlSnippet-87bac97d-3abc-41f2-8818-75e6f0e66739.html" },
-  { id: 4, slug: "kiss-or-death", height: 3898, url: "https://c-p.rmcdn.net/6a0fe457f235cc8b4157bdb6/6357317/HtmlSnippet-3c282c53-2a07-43d1-bbb7-b4d543837dc3.html" },
-  { id: 5, slug: "maruki-ramen", height: 3350, url: "https://c-p.rmcdn.net/6a0fe457f235cc8b4157bdb6/6357317/HtmlSnippet-a21aaa7a-b23d-4d7d-ae71-c6ea25c7bac8.html" },
-  { id: 6, slug: "unbound", height: 3123, url: "https://c-p.rmcdn.net/6a0fe457f235cc8b4157bdb6/6357317/HtmlSnippet-f51d77fd-ce6c-412c-adfc-77f1e7e096f9.html" },
-  { id: 7, slug: "christmas", height: 3116, url: "https://c-p.rmcdn.net/6a0fe457f235cc8b4157bdb6/6357317/HtmlSnippet-522d5636-0b18-4268-b645-330192cd6b12.html" },
-  { id: 8, slug: "soonami", height: 4108, url: "https://c-p.rmcdn.net/6a0fe457f235cc8b4157bdb6/6357317/HtmlSnippet-c087bbe4-48f4-4b4e-b435-a0d55e18df77.html" },
-  { id: 9, slug: "contact", height: 540, url: "https://c-p.rmcdn.net/6a0fe457f235cc8b4157bdb6/6357317/HtmlSnippet-81612e2e-7ad3-46a0-8059-dc27441eb326.html" },
-];
+  "home", "oopsie-daisy", "sarawak-youth-talent", "kiss-or-death",
+  "maruki-ramen", "baaquet", "christmas", "soonami", "contact",
+].map((slug, index) => ({ id: index + 1, slug, height: 0, url: "" }));
 
 const routeMap = {
   1: "/",
@@ -24,7 +17,7 @@ const routeMap = {
   3: "/sarawak-youth-talent",
   4: "/kiss-or-death",
   5: "/maruki-ramen",
-  6: "/unbound",
+  6: "/baaquet",
   7: "/christmas",
   8: "/soonami",
   9: "/contact",
@@ -51,7 +44,15 @@ async function fetchBuffer(url) {
 }
 
 async function localizeAssets(markup) {
-  const withoutSrcset = markup.replace(/\s+srcset="[^"]*"/g, "");
+  // Keep the export's highest-resolution crop. The canvas grows beyond its
+  // 1024px design width on desktop, so discarding srcset made artwork soft.
+  const withoutSrcset = markup.replace(/<img\b[^>]*>/g, (image) => {
+    const srcset = image.match(/\ssrcset="([^"]*)"/)?.[1];
+    if (!srcset) return image;
+    const candidates = srcset.split(",").map((candidate) => candidate.trim().split(/\s+/));
+    candidates.sort((a, b) => Number.parseFloat(b[1]) - Number.parseFloat(a[1]));
+    return image.replace(/\ssrcset="[^"]*"/, "").replace(/\ssrc="[^"]*"/, ` src="${candidates[0][0]}"`);
+  });
   const rawMatches = withoutSrcset.match(/https:\/\/(?:i-p\.rmcdn\.net|v-p\.rmcdn1\.net|c-p\.rmcdn\.net)\/[^\s"<]+/g) ?? [];
   const remoteUrls = [...new Set(rawMatches.map(decodeUrl))];
   const replacements = new Map();
@@ -83,7 +84,14 @@ function extractArticle(source) {
   const start = source.indexOf("<article");
   const end = source.indexOf("</article>");
   if (start < 0 || end < 0) throw new Error("Article markup not found");
-  return source.slice(start, end + "</article>".length);
+  // Readymag exports its typography/link rules after the article. Keep those
+  // scoped to the canvas so the separate hover overlays retain their animation.
+  const textStyles = source.match(/<div id="text-global-styles">([\s\S]*?)<\/div>/)?.[1] ?? "";
+  const css = [...textStyles.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((match) => match[1]).join("\n");
+  const scopedStyles = css.replace(/([^{}]+)\{([^{}]*)\}/g, (_, selectors, declarations) =>
+    `${selectors.split(",").map((selector) => `.portfolio-stage ${selector.trim()}`).join(", ")} {${declarations}}`,
+  );
+  return source.slice(start, end + "</article>".length) + `<style>${scopedStyles}</style>`;
 }
 
 function normalizeMarkup(markup, pageId) {
@@ -110,6 +118,19 @@ await mkdir(contentDir, { recursive: true });
 await mkdir(assetsDir, { recursive: true });
 
 const generatedPages = {};
+
+// Resolve the current publication instead of silently reusing an old snapshot.
+const publicationResponse = await fetch("https://readymag.website/6357317");
+if (!publicationResponse.ok) throw new Error(`Readymag: ${publicationResponse.status}`);
+const publication = (await publicationResponse.text()).replaceAll("&quot;", '"').replaceAll("&amp;", "&");
+const publishedPages = JSON.parse(publication.match(/"pages":(\[.*?\]),"pages_count"/)?.[1] ?? "[]");
+if (publishedPages.length !== pages.length) throw new Error("Readymag page list changed; review the route mapping before importing.");
+for (const page of pages) {
+  const published = publishedPages.find((item) => item.num === page.id);
+  if (!published?.htmlUrl) throw new Error(`Missing published page ${page.id}`);
+  page.url = published.htmlUrl;
+  page.height = published.height;
+}
 
 for (const page of pages) {
   const response = await fetch(page.url, { headers: { referer: "https://readymag.website/" } });

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { SarawakEmbed } from "./components/SarawakEmbed";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://shane-soon-portfolio.netlify.app"),
@@ -39,7 +40,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <head>
+        <link rel="preload" href="/fonts/british-green.otf" as="font" type="font/otf" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://xd.adobe.com" />
+      </head>
+      <body>{children}<SarawakEmbed /></body>
     </html>
   );
 }

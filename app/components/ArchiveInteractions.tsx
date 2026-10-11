@@ -5,7 +5,6 @@
 import {
   type CSSProperties,
   type RefObject,
-  type TouchEvent,
   useCallback,
   useEffect,
   useRef,
@@ -13,6 +12,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import {
   getInteractiveProject,
   interactiveProjects,
@@ -20,26 +20,18 @@ import {
 } from "../project-media";
 
 const FOLDER_WIDGET_ID = "6a100d84d4a20edcacbae02e";
-const SCATTER_POSITIONS = [
-  { x: "-31vw", y: "-24vh", rotation: "-4deg", z: 2 },
-  { x: "16vw", y: "-27vh", rotation: "3deg", z: 4 },
-  { x: "-34vw", y: "11vh", rotation: "2.5deg", z: 5 },
-  { x: "18vw", y: "12vh", rotation: "-3.5deg", z: 3 },
-  { x: "-7vw", y: "27vh", rotation: "1.5deg", z: 6 },
-] as const;
+const HOME_PROJECT_HOTSPOTS: Record<string, string> = {
+  "6a2ab403068c123af12e58dd": "/oopsie-daisy",
+  "6a2ab50f79922523f31296a5": "/sarawak-youth-talent",
+  "6a2ab65f58bb217c3b5b0e36": "/kiss-or-death",
+  "6a2ab67c16576cefb92f8dd2": "/maruki-ramen",
+  "6a2ab6952b544b4beff87a81": "/baaquet",
+  "6a2ab6c39ae213e0025c15b9": "/christmas",
+  "6a2ab6d5f86bc328ba58aaf9": "/soonami",
+};
 
 const subscribeToClient = () => () => undefined;
 
-type HoveredProject = {
-  project: InteractiveProject;
-  rect: DOMRect;
-};
-
-type Point = { x: number; y: number };
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
 
 function InteractiveCursor() {
   const cursorRef = useRef<HTMLDivElement>(null);
@@ -79,237 +71,126 @@ function InteractiveCursor() {
 
 function TableOfContents({
   open,
-  onClose,
   onViewAll,
+  onPointerEnter,
+  onPointerLeave,
 }: {
   open: boolean;
-  onClose: () => void;
   onViewAll: () => void;
+  onPointerEnter: () => void;
+  onPointerLeave: () => void;
 }) {
   return (
-    <>
-      <button
-        className={`archive-menu-scrim${open ? " is-open" : ""}`}
-        type="button"
-        aria-label="Close table of contents"
-        tabIndex={open ? 0 : -1}
-        onClick={onClose}
-      />
-      <aside
-        id="archive-table-of-contents"
-        className={`archive-toc${open ? " is-open" : ""}`}
-        aria-hidden={!open}
-        inert={!open}
-      >
-        <div className="archive-toc-heading">
-          <div>
-            <span>Archive index</span>
-            <h2>Table of Contents</h2>
-          </div>
-          <button
-            type="button"
-            className="archive-icon-button"
-            aria-label="Close table of contents"
-            tabIndex={open ? 0 : -1}
-            data-cursor-label="CLOSE"
-            onClick={onClose}
-          >
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
-        <nav aria-label="Portfolio projects">
-          <ol className="archive-project-list">
-            {interactiveProjects.map((project, index) => (
-              <li key={project.slug} style={{ "--menu-index": index } as CSSProperties}>
-                <a href={project.href} tabIndex={open ? 0 : -1}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <strong>{project.title}</strong>
-                  <em>{project.category}</em>
-                </a>
-              </li>
-            ))}
-          </ol>
-        </nav>
-        <a
-          className="archive-view-all"
-          href="#projects"
-          tabIndex={open ? 0 : -1}
-          onClick={(event) => {
-            event.preventDefault();
-            onViewAll();
-          }}
-        >
-          View all projects <span aria-hidden="true">↓</span>
-        </a>
-      </aside>
-    </>
-  );
-}
-
-function ProjectPeek({ hovered }: { hovered: HoveredProject | null }) {
-  if (!hovered) return null;
-
-  const width = 190;
-  const placeRight = hovered.rect.left < window.innerWidth * 0.57;
-  const left = placeRight
-    ? clamp(hovered.rect.right - 62, 18, window.innerWidth - width - 18)
-    : clamp(hovered.rect.left - width + 62, 18, window.innerWidth - width - 18);
-  const top = clamp(hovered.rect.top - 116, 20, window.innerHeight - 180);
-
-  return (
-    <div
-      className="project-peek is-visible"
-      style={{ left, top, "--peek-rotation": placeRight ? "2deg" : "-2deg" } as CSSProperties}
-      aria-hidden="true"
+    <aside
+      id="archive-table-of-contents"
+      className={`archive-toc${open ? " is-open" : ""}`}
+      aria-hidden={!open}
+      inert={!open}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+      onFocus={onPointerEnter}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) onPointerLeave();
+      }}
     >
-      <img src={hovered.project.preview} alt="" />
-      <span>{hovered.project.category}</span>
-    </div>
-  );
-}
-
-type ProjectLightboxProps = {
-  project: InteractiveProject;
-  index: number;
-  onClose: () => void;
-  onNext: () => void;
-  onPrevious: () => void;
-};
-
-function ProjectLightbox({
-  project,
-  index,
-  onClose,
-  onNext,
-  onPrevious,
-}: ProjectLightboxProps) {
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const touchStart = useRef(0);
-
-  useEffect(() => {
-    closeRef.current?.focus();
-  }, []);
-
-  const onTouchStart = (event: TouchEvent) => {
-    touchStart.current = event.changedTouches[0]?.clientX ?? 0;
-  };
-  const onTouchEnd = (event: TouchEvent) => {
-    const distance = (event.changedTouches[0]?.clientX ?? 0) - touchStart.current;
-    if (Math.abs(distance) < 46) return;
-    if (distance < 0) onNext();
-    else onPrevious();
-  };
-
-  return (
-    <div className="project-lightbox" role="dialog" aria-modal="true" aria-label={`${project.title} image viewer`}>
-      <button className="lightbox-backdrop" type="button" aria-label="Close image viewer" onClick={onClose} />
-      <header className="lightbox-header">
-        <span>{project.title}</span>
-        <span aria-live="polite">
-          {index + 1} / {project.images.length}
-        </span>
-        <button
-          ref={closeRef}
-          type="button"
-          className="archive-icon-button lightbox-close"
-          aria-label="Close image viewer"
-          data-cursor-label="CLOSE"
-          onClick={onClose}
-        >
-          <span aria-hidden="true">×</span>
-        </button>
-      </header>
-      <button
-        type="button"
-        className="lightbox-arrow is-previous"
-        aria-label="Previous image"
-        onClick={onPrevious}
+      <div className="archive-toc-heading">
+        <div>
+          <span>Archive index</span>
+          <h2>Table of Contents</h2>
+        </div>
+      </div>
+      <nav aria-label="Portfolio projects">
+        <ol className="archive-project-list">
+          {interactiveProjects.map((project, index) => (
+            <li key={project.slug} style={{ "--menu-index": index } as CSSProperties}>
+              <Link href={project.href} tabIndex={open ? 0 : -1}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <strong>{project.title}</strong>
+                <em>{project.category}</em>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      </nav>
+      <a
+        className="archive-view-all"
+        href="#projects"
+        tabIndex={open ? 0 : -1}
+        onClick={(event) => {
+          event.preventDefault();
+          onViewAll();
+        }}
       >
-        <span aria-hidden="true">←</span>
-      </button>
-      <figure className="lightbox-figure" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <img src={project.images[index]} alt={`${project.title} artwork ${index + 1}`} />
-      </figure>
-      <button type="button" className="lightbox-arrow is-next" aria-label="Next image" onClick={onNext}>
-        <span aria-hidden="true">→</span>
-      </button>
-    </div>
+        View all projects <span aria-hidden="true">↓</span>
+      </a>
+    </aside>
   );
 }
 
 type ProjectScatterProps = {
   project: InteractiveProject;
   visible: boolean;
-  origin: Point;
   onClose: () => void;
-  onOpenImage: (index: number) => void;
 };
 
-function ProjectScatter({ project, visible, origin, onClose, onOpenImage }: ProjectScatterProps) {
-  const closeRef = useRef<HTMLButtonElement>(null);
-
+function ProjectScatter({
+  project,
+  visible,
+  onClose,
+}: ProjectScatterProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    if (visible) closeRef.current?.focus();
-  }, [visible]);
-
+    const dialog = dialogRef.current;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    dialog?.showModal();
+    dialog?.querySelector<HTMLElement>("#project-scatter-title")?.focus({ preventScroll: true });
+    document.body.style.overflow = "hidden";
+    return () => {
+      dialog?.close();
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus({ preventScroll: true });
+    };
+  }, []);
   return (
-    <section
-      className={`project-scatter${visible ? " is-open" : " is-closing"}`}
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      ref={dialogRef}
+      className={`project-scatter project-preview-dialog${visible ? " is-open" : " is-closing"}`}
       aria-labelledby="project-scatter-title"
-      style={{ "--origin-x": `${origin.x}px`, "--origin-y": `${origin.y}px` } as CSSProperties}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+      onCancel={(event) => { event.preventDefault(); onClose(); }}
     >
-      <button className="scatter-backdrop" type="button" aria-label="Close project preview" onClick={onClose} />
+      <div className="scatter-backdrop" onClick={onClose} aria-hidden="true" />
+      <div className="project-preview-panel">
+      <button type="button" className="preview-back" onClick={onClose}>← Back to projects</button>
       <header className="scatter-heading">
         <span>{project.category}</span>
-        <button type="button" onClick={onClose} data-cursor-label="CLOSE">
-          <h2 id="project-scatter-title">{project.title}</h2>
-          <small>Click to close</small>
-        </button>
-        <a href={project.href}>Open full case study <span aria-hidden="true">↗</span></a>
+        <h2 id="project-scatter-title" tabIndex={-1}>{project.title}</h2>
+        <small>A closer look at the project</small>
+        <Link
+          href={project.href}
+        >
+          View full project <span aria-hidden="true">↗</span>
+        </Link>
       </header>
-      <button
-        ref={closeRef}
-        type="button"
-        className="archive-icon-button scatter-close"
-        aria-label="Close project preview"
-        data-cursor-label="CLOSE"
-        onClick={onClose}
-      >
-        <span aria-hidden="true">×</span>
-      </button>
       <div className="project-scatter-images">
         {project.images.map((src, index) => {
-          const position = SCATTER_POSITIONS[index % SCATTER_POSITIONS.length];
           const style = {
-            "--scatter-x": position.x,
-            "--scatter-y": position.y,
-            "--scatter-rotation": position.rotation,
-            "--scatter-z": position.z,
-            "--enter-delay": `${index * 65}ms`,
-            "--exit-delay": `${(project.images.length - index - 1) * 45}ms`,
+            "--enter-delay": `${index * 35}ms`,
           } as CSSProperties;
           return (
-            <button
+            <figure
               key={src}
-              type="button"
               className="scatter-image"
               style={style}
-              aria-label={`Open ${project.title} image ${index + 1}`}
-              data-cursor-label="EXPAND"
-              onClick={() => onOpenImage(index)}
             >
-              <img src={src} alt={`${project.title} project preview ${index + 1}`} />
+              <img src={src} decoding="async" alt={`${project.title} project preview ${index + 1}`} />
               <span>{String(index + 1).padStart(2, "0")}</span>
-            </button>
+            </figure>
           );
         })}
       </div>
-    </section>
+      </div>
+    </dialog>
   );
 }
 
@@ -322,36 +203,45 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
   const mounted = useSyncExternalStore(subscribeToClient, () => true, () => false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [folderHovered, setFolderHovered] = useState(false);
-  const [hoveredProject, setHoveredProject] = useState<HoveredProject | null>(null);
   const [activeProject, setActiveProject] = useState<InteractiveProject | null>(null);
   const [scatterVisible, setScatterVisible] = useState(false);
-  const [scatterOrigin, setScatterOrigin] = useState<Point>({ x: 0, y: 0 });
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sourceAnchorRef = useRef<HTMLAnchorElement | null>(null);
+  const projectUnmountTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const menuCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelProjectClose = useCallback(() => {
+    if (projectUnmountTimer.current) clearTimeout(projectUnmountTimer.current);
+    projectUnmountTimer.current = null;
+  }, []);
 
   const closeProject = useCallback(() => {
-    setLightboxIndex(null);
+    cancelProjectClose();
     setScatterVisible(false);
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => {
+    projectUnmountTimer.current = setTimeout(() => {
       setActiveProject(null);
-      requestAnimationFrame(() => sourceAnchorRef.current?.focus());
-    }, 560);
+    }, 240);
+  }, [cancelProjectClose]);
+
+  const openProject = useCallback((project: InteractiveProject) => {
+    cancelProjectClose();
+    setMenuOpen(false);
+    setActiveProject(project);
+    requestAnimationFrame(() => setScatterVisible(true));
+  }, [cancelProjectClose]);
+
+  const cancelMenuClose = useCallback(() => {
+    if (menuCloseTimer.current) clearTimeout(menuCloseTimer.current);
+    menuCloseTimer.current = null;
   }, []);
 
-  const openProject = useCallback((project: InteractiveProject, rect: DOMRect) => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setMenuOpen(false);
-    setHoveredProject(null);
-    setActiveProject(project);
-    setScatterOrigin({
-      x: rect.left + rect.width / 2 - window.innerWidth / 2,
-      y: rect.top + rect.height / 2 - window.innerHeight / 2,
-    });
-    setScatterVisible(false);
-    requestAnimationFrame(() => requestAnimationFrame(() => setScatterVisible(true)));
-  }, []);
+  const openMenu = useCallback(() => {
+    cancelMenuClose();
+    setMenuOpen(true);
+  }, [cancelMenuClose]);
+
+  const scheduleMenuClose = useCallback(() => {
+    cancelMenuClose();
+    menuCloseTimer.current = setTimeout(() => setMenuOpen(false), 140);
+  }, [cancelMenuClose]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -361,21 +251,29 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
 
     const projectFromTarget = (target: EventTarget | null) => {
       const element = target instanceof Element ? target : null;
-      const anchor = element?.closest<HTMLAnchorElement>("a[href]");
+      const anchor = element?.closest<HTMLAnchorElement>("a");
       if (!anchor || !stage.contains(anchor)) return null;
-      const project = getInteractiveProject(new URL(anchor.href, window.location.href).pathname);
+      const href = anchor.getAttribute("href");
+      const widgetId =
+        element?.closest<HTMLElement>("[data-id]")?.dataset.id ??
+        anchor.querySelector<HTMLElement>("[data-id]")?.dataset.id;
+      const projectPath = href
+        ? new URL(href, window.location.href).pathname
+        : widgetId
+          ? HOME_PROJECT_HOTSPOTS[widgetId]
+          : undefined;
+      const project = projectPath ? getInteractiveProject(projectPath) : null;
       return project ? { anchor, project } : null;
     };
 
-    const showPreview = (target: EventTarget | null) => {
-      if (activeProject) return;
+    const showPreview = (target: EventTarget | null, relatedTarget?: EventTarget | null) => {
       const match = projectFromTarget(target);
       if (!match) return;
+      if (relatedTarget instanceof Node && match.anchor.contains(relatedTarget)) return;
+      match.project.images.forEach((src) => { const image = new Image(); image.src = src; });
       const widget = match.anchor.closest<HTMLElement>(".widget-text-v3");
       widget?.classList.add("archive-project-hover");
       if (widget) projectWidgets.add(widget);
-      match.anchor.dataset.cursorLabel = "VIEW";
-      setHoveredProject({ project: match.project, rect: match.anchor.getBoundingClientRect() });
     };
 
     const hidePreview = (target: EventTarget | null, relatedTarget: EventTarget | null) => {
@@ -383,9 +281,6 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
       if (!match) return;
       if (relatedTarget instanceof Node && match.anchor.contains(relatedTarget)) return;
       match.anchor.closest<HTMLElement>(".widget-text-v3")?.classList.remove("archive-project-hover");
-      setHoveredProject((current) =>
-        current?.project.slug === match.project.slug ? null : current,
-      );
     };
 
     const onClick = (event: MouseEvent) => {
@@ -393,12 +288,12 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
       const match = projectFromTarget(event.target);
       if (!match) return;
       event.preventDefault();
-      sourceAnchorRef.current = match.anchor;
-      openProject(match.project, match.anchor.getBoundingClientRect());
+      match.anchor.focus({ preventScroll: true });
+      openProject(match.project);
     };
-    const onPointerOver = (event: PointerEvent) => showPreview(event.target);
+    const onPointerOver = (event: PointerEvent) => showPreview(event.target, event.relatedTarget);
     const onPointerOut = (event: PointerEvent) => hidePreview(event.target, event.relatedTarget);
-    const onFocusIn = (event: FocusEvent) => showPreview(event.target);
+    const onFocusIn = (event: FocusEvent) => showPreview(event.target, event.relatedTarget);
     const onFocusOut = (event: FocusEvent) => hidePreview(event.target, event.relatedTarget);
 
     stage.addEventListener("click", onClick);
@@ -406,11 +301,13 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
     stage.addEventListener("pointerout", onPointerOut);
     stage.addEventListener("focusin", onFocusIn);
     stage.addEventListener("focusout", onFocusOut);
-    stage.querySelectorAll<HTMLAnchorElement>("a[href]").forEach((anchor) => {
-      const project = getInteractiveProject(new URL(anchor.href, window.location.href).pathname);
-      if (project) {
-        anchor.dataset.cursorLabel = "VIEW";
+    stage.querySelectorAll<HTMLAnchorElement>("a").forEach((anchor) => {
+      const match = projectFromTarget(anchor);
+      if (match) {
+        anchor.dataset.cursorLabel = "PREVIEW";
+        anchor.href = match.project.href;
         anchor.setAttribute("aria-haspopup", "dialog");
+        anchor.setAttribute("aria-label", `Preview ${match.project.title}`);
       }
     });
 
@@ -422,7 +319,7 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
       stage.removeEventListener("focusout", onFocusOut);
       projectWidgets.forEach((widget) => widget.classList.remove("archive-project-hover"));
     };
-  }, [activeProject, openProject, rootRef]);
+  }, [openProject, rootRef, scale]);
 
   useEffect(() => {
     const folder = rootRef.current?.querySelector<HTMLElement>(`[data-id="${FOLDER_WIDGET_ID}"]`);
@@ -436,74 +333,37 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        if (lightboxIndex !== null) setLightboxIndex(null);
-        else if (activeProject) closeProject();
+        if (activeProject) closeProject();
         else setMenuOpen(false);
-      }
-      if (lightboxIndex !== null && activeProject) {
-        if (event.key === "ArrowLeft") {
-          setLightboxIndex((lightboxIndex - 1 + activeProject.images.length) % activeProject.images.length);
-        }
-        if (event.key === "ArrowRight") {
-          setLightboxIndex((lightboxIndex + 1) % activeProject.images.length);
-        }
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeProject, closeProject, lightboxIndex]);
-
-  useEffect(() => {
-    if (!activeProject) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [activeProject]);
+  }, [activeProject, closeProject]);
 
   useEffect(() => () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (projectUnmountTimer.current) clearTimeout(projectUnmountTimer.current);
+    if (menuCloseTimer.current) clearTimeout(menuCloseTimer.current);
   }, []);
-
-  const nextImage = () => {
-    if (!activeProject || lightboxIndex === null) return;
-    setLightboxIndex((lightboxIndex + 1) % activeProject.images.length);
-  };
-  const previousImage = () => {
-    if (!activeProject || lightboxIndex === null) return;
-    setLightboxIndex((lightboxIndex - 1 + activeProject.images.length) % activeProject.images.length);
-  };
 
   const overlays = mounted
     ? createPortal(
         <>
           <TableOfContents
             open={menuOpen}
-            onClose={() => setMenuOpen(false)}
+            onPointerEnter={cancelMenuClose}
+            onPointerLeave={scheduleMenuClose}
             onViewAll={() => {
               setMenuOpen(false);
               window.history.replaceState(null, "", "#projects");
               window.scrollTo({ top: 1416 * scale, behavior: "smooth" });
             }}
           />
-          <ProjectPeek hovered={activeProject ? null : hoveredProject} />
           {activeProject ? (
             <ProjectScatter
               project={activeProject}
               visible={scatterVisible}
-              origin={scatterOrigin}
               onClose={closeProject}
-              onOpenImage={setLightboxIndex}
-            />
-          ) : null}
-          {activeProject && lightboxIndex !== null ? (
-            <ProjectLightbox
-              project={activeProject}
-              index={lightboxIndex}
-              onClose={() => setLightboxIndex(null)}
-              onNext={nextImage}
-              onPrevious={previousImage}
             />
           ) : null}
           <InteractiveCursor />
@@ -526,12 +386,31 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
         aria-label={menuOpen ? "Close portfolio archive" : "Open portfolio archive"}
         aria-expanded={menuOpen}
         aria-controls="archive-table-of-contents"
-        data-cursor-label={menuOpen ? "CLOSE" : "OPEN"}
-        onPointerEnter={() => setFolderHovered(true)}
-        onPointerLeave={() => setFolderHovered(false)}
-        onFocus={() => setFolderHovered(true)}
-        onBlur={() => setFolderHovered(false)}
-        onClick={() => setMenuOpen((current) => !current)}
+        data-cursor-label={menuOpen ? "" : "OPEN"}
+        onPointerEnter={() => {
+          setFolderHovered(true);
+          openMenu();
+        }}
+        onPointerLeave={() => {
+          setFolderHovered(false);
+          scheduleMenuClose();
+        }}
+        onFocus={() => {
+          setFolderHovered(true);
+          openMenu();
+        }}
+        onBlur={(event) => {
+          setFolderHovered(false);
+          if (!event.currentTarget.contains(event.relatedTarget)) scheduleMenuClose();
+        }}
+        onClick={() => {
+          cancelMenuClose();
+          if (window.matchMedia("(hover: none), (pointer: coarse)").matches) {
+            setMenuOpen((current) => !current);
+          } else {
+            openMenu();
+          }
+        }}
       >
         <span className="sr-only">{menuOpen ? "Close archive" : "Open archive"}</span>
       </button>

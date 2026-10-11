@@ -8,7 +8,7 @@ const routes = [
   "/sarawak-youth-talent",
   "/kiss-or-death",
   "/maruki-ramen",
-  "/unbound",
+  "/baaquet",
   "/christmas",
   "/soonami",
   "/contact",
@@ -53,8 +53,25 @@ test("server-renders the complete portfolio", async () => {
   assert.match(html, /Sarawak Youth Talent/);
   assert.match(html, /Christmas\/3D Design/);
   assert.match(html, /Soonami\/Personal Branding/);
+  assert.match(html, /Baaquet\/Branding/);
+  assert.doesNotMatch(html, /Unbound\/Magazine/);
   assert.match(html, /\/assets\/[a-f0-9]+\.(?:png|jpg)/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
+});
+
+test("all imported pages retain scoped typography and local artwork", async () => {
+  const manifest = JSON.parse(await readFile(new URL("../content/pages.json", import.meta.url), "utf8"));
+  assert.equal(manifest.length, 9);
+  assert.equal(manifest.find((page) => page.id === 6).slug, "baaquet");
+  for (const page of manifest) {
+    const html = await readFile(new URL(`../content/page-${page.id}.html`, import.meta.url), "utf8");
+    assert.match(html, /<style>\.portfolio-stage/);
+    assert.doesNotMatch(html, /\.portfolio-stage <style|href="\/(?:u1300893426\/)?6357317/);
+    assert.doesNotMatch(html, /(?:src|srcset)="https:\/\/(?:i-p|c-p|v-p)\.rmcdn/);
+    const assets = [...new Set([...html.matchAll(/\/assets\/([a-f0-9]+\.(?:png|jpg|jpeg|webp|gif|img))/g)].map((match) => match[1]))];
+    assert.ok(assets.length > 0, `Page ${page.id} has artwork`);
+    await Promise.all(assets.map((asset) => access(new URL(`../public/assets/${asset}`, import.meta.url))));
+  }
 });
 
 test("every portfolio route and share asset is generated", async () => {

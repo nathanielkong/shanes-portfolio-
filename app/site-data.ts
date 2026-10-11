@@ -48,11 +48,11 @@ export const portfolioPages: PortfolioPage[] = [
   },
   {
     id: 6,
-    slug: "unbound",
-    title: "Unbound",
+    slug: "baaquet",
+    title: "Baaquet",
     description:
-      "An editorial magazine cover inspired by architecture, culture, and public knowledge.",
-    height: 3123,
+      "Brand identity, packaging, and visual design for Baaquet.",
+    height: 8079,
   },
   {
     id: 7,
