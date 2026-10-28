@@ -5,6 +5,7 @@ export type InteractiveProject = {
   href: string;
   preview: string;
   images: string[];
+  artboardSlices?: [number, number][];
 };
 
 export const interactiveProjects: InteractiveProject[] = [
@@ -105,6 +106,15 @@ export const interactiveProjects: InteractiveProject[] = [
       "/assets/45ad3220211f029c.png",
       "/assets/777816dd33069530.png",
     ],
+  },
+  {
+    slug: "tiffe",
+    title: "Tiffe",
+    category: "Branding",
+    href: "/tiffe",
+    preview: "/assets/tiffe-artboard.png",
+    images: Array(5).fill("/assets/tiffe-artboard.png"),
+    artboardSlices: [[0, 1477], [3460, 5108], [5108, 6520], [7390, 8285], [9180, 10830]],
   },
 ];
 

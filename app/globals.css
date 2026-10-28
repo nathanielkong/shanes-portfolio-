@@ -5,6 +5,23 @@
   color-scheme: light;
 }
 
+/* New projects share the existing canvas, modal and scroll-motion system. */
+.tiffe-home-preview a { color: inherit; text-decoration: none; cursor: pointer; }
+.tiffe-home-preview .widget-text-v3 { width: 248px; height: 224px; }
+.portfolio-stage .tiffe-home-preview p { text-align: center; font-size: 15px; font-weight: 400; letter-spacing: .8px; color: #2b1a07; line-height: 29px; margin: 0; padding-top: 12px; }
+.portfolio-stage [data-id="6a11af966d4fa4c8571fba24"] {
+  transform: scaleY(1.08);
+  transform-origin: top center;
+  pointer-events: none;
+}
+.tiffe-film { padding: 0 12px 12px; background: #090909; box-shadow: 0 0 24px #0002; }
+.tiffe-film > span { display: block; text-align: center; font-size: 7px; line-height: 12px; color: #c9ad91; }
+.tiffe-film > div { width: 100%; background-repeat: no-repeat; }
+.project-preview-dialog .tiffe-preview-crop { display: block; width: auto; height: clamp(150px, 22vh, 220px); max-width: 100%; flex-shrink: 0; border-radius: 6px; }
+@media (max-width: 700px) {
+  .project-preview-dialog .tiffe-preview-crop { height: 260px; }
+}
+
 @font-face {
   font-family: "British Green";
   src: url("/fonts/british-green.otf") format("opentype");
@@ -449,19 +466,15 @@ body {
 .portfolio-stage [data-id="6a100d84d4a20edcacbae02e"] {
   transform-origin: 50% 76%;
   transition:
-    transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 360ms ease;
-  will-change: transform;
+    transform 180ms ease-out;
 }
 
 .portfolio-stage [data-id="6a100d84d4a20edcacbae02e"].archive-folder-hovered {
-  transform: translateY(-5px) rotate(-0.2deg) scale(1.008);
-  filter: drop-shadow(0 14px 12px rgba(62, 44, 32, 0.11));
+  transform: translateY(-3px);
 }
 
 .portfolio-stage [data-id="6a100d84d4a20edcacbae02e"].archive-folder-open {
-  transform: translateY(-10px) rotate(-0.75deg) scale(1.012);
-  filter: drop-shadow(0 22px 18px rgba(62, 44, 32, 0.16));
+  transform: translateY(-3px);
 }
 
 .archive-menu-scrim,
@@ -492,7 +505,7 @@ body {
   top: clamp(72px, 15vh, 132px);
   left: min(calc(100vw - 414px), calc(50vw + 255px));
   width: min(382px, calc(100vw - 32px));
-  max-height: min(680px, calc(100vh - 52px));
+  max-height: min(680px, calc(100dvh - clamp(72px, 15vh, 132px) - 24px));
   padding: 25px 25px 20px;
   overflow: auto;
   color: #34271f;
@@ -504,11 +517,11 @@ body {
   box-shadow: 0 25px 70px rgba(50, 36, 25, 0.2);
   opacity: 0;
   pointer-events: none;
-  transform: translate3d(-34px, 18px, 0) rotate(-1.25deg) scale(0.92);
+  transform: translate3d(0, 6px, 0);
   transform-origin: 8% 18%;
   transition:
-    opacity 260ms ease,
-    transform 430ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 140ms ease-out,
+    transform 180ms ease-out;
 }
 
 .archive-toc::before {
@@ -525,7 +538,7 @@ body {
 .archive-toc.is-open {
   opacity: 1;
   pointer-events: auto;
-  transform: translate3d(0, 0, 0) rotate(-0.35deg) scale(1);
+  transform: translate3d(0, 0, 0);
 }
 
 .archive-toc-heading {
@@ -628,17 +641,14 @@ body {
 }
 
 .archive-project-list li {
-  opacity: 0;
-  transform: translateX(17px);
-  transition:
-    opacity 240ms ease,
-    transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 1;
+  transform: none;
 }
 
 .archive-toc.is-open .archive-project-list li {
   opacity: 1;
   transform: translateX(0);
-  transition-delay: calc(90ms + var(--menu-index) * 38ms);
+  transition-delay: 0ms;
 }
 
 .archive-project-list a {
@@ -651,13 +661,10 @@ body {
   text-decoration: none;
   border-bottom: 1px solid rgba(69, 48, 35, 0.2);
   transition:
-    padding 200ms ease,
     background 200ms ease;
 }
 
 .archive-project-list a:hover {
-  padding-right: 8px;
-  padding-left: 8px;
   background: rgba(255, 255, 255, 0.27);
 }
 
@@ -1080,11 +1087,11 @@ body {
     left: 16px;
     width: auto;
     max-height: calc(100vh - 36px);
-    transform: translate3d(0, 24px, 0) rotate(-0.6deg) scale(0.96);
+    transform: translate3d(0, 6px, 0);
   }
 
   .archive-toc.is-open {
-    transform: translate3d(0, 0, 0) rotate(0) scale(1);
+    transform: translate3d(0, 0, 0);
   }
 
   .archive-project-list strong {

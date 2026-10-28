@@ -1,4 +1,5 @@
 import { generatedPages } from "./generated-pages";
+import { tiffeHeight, tiffeHtml, withTiffeHomePreview } from "./tiffe-project";
 
 export type PortfolioPage = {
   id: number;
@@ -15,7 +16,7 @@ export const portfolioPages: PortfolioPage[] = [
     title: "Creative Portfolio",
     description:
       "The creative portfolio of multimedia designer Shane Soon, specialising in advertising, branding, typography, layout, and digital design.",
-    height: 3257,
+    height: 3607,
   },
   {
     id: 2,
@@ -75,16 +76,23 @@ export const portfolioPages: PortfolioPage[] = [
     description: "Get in touch with multimedia designer Shane Soon.",
     height: 540,
   },
+  {
+    id: 10,
+    slug: "tiffe",
+    title: "Tiffe",
+    description: "Café branding, illustrated menus and takeaway packaging for Tiffe.",
+    height: tiffeHeight,
+  },
 ];
 
 export function getPageById(id: number) {
   const page = portfolioPages.find((item) => item.id === id);
   if (!page) throw new Error(`Unknown portfolio page: ${id}`);
-  return { ...page, html: generatedPages[id] };
+  return { ...page, html: id === 1 ? withTiffeHomePreview(generatedPages[id]) : id === 10 ? tiffeHtml : generatedPages[id] };
 }
 
 export function getPageBySlug(slug: string) {
   const page = portfolioPages.find((item) => item.slug === slug);
   if (!page) return null;
-  return { ...page, html: generatedPages[page.id] };
+  return getPageById(page.id);
 }

@@ -12,6 +12,7 @@ const routes = [
   "/christmas",
   "/soonami",
   "/contact",
+  "/tiffe",
 ];
 
 async function worker() {
@@ -54,6 +55,7 @@ test("server-renders the complete portfolio", async () => {
   assert.match(html, /Christmas\/3D Design/);
   assert.match(html, /Soonami\/Personal Branding/);
   assert.match(html, /Baaquet\/Branding/);
+  assert.match(html, /Tiffe\/Branding/);
   assert.doesNotMatch(html, /Unbound\/Magazine/);
   assert.match(html, /\/assets\/[a-f0-9]+\.(?:png|jpg)/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
@@ -72,6 +74,27 @@ test("all imported pages retain scoped typography and local artwork", async () =
     assert.ok(assets.length > 0, `Page ${page.id} has artwork`);
     await Promise.all(assets.map((asset) => access(new URL(`../public/assets/${asset}`, import.meta.url))));
   }
+});
+
+test("Tiffe renders the complete artwork with shared animation hooks and navigation", async () => {
+  const site = await worker();
+  const response = await site.fetch(
+    new Request("http://localhost/tiffe", { headers: { accept: "text/html" } }),
+    environment(),
+    context(),
+  );
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Tiffe — Shane Soon/);
+  assert.match(html, /tiffe-artboard\.png/);
+  assert.match(html, /href="\/#projects"/);
+  assert.match(html, /Back to top/);
+  for (const label of ["brand goals", "Opening soon posters", "Coffee carriers", "pastry menu", "Countertop menu", "shopping bags", "Tiffe signature"]) {
+    assert.ok(html.includes(label), `Includes ${label}`);
+  }
+  const content = await readFile(new URL("../app/tiffe-project.ts", import.meta.url), "utf8");
+  assert.match(content, /const boundaries = \[0,.*11199\]/);
+  assert.match(content, /class=\"animation-container\"/);
 });
 
 test("every portfolio route and share asset is generated", async () => {
@@ -95,7 +118,7 @@ test("interactive archive artwork is available locally", async () => {
     ...new Set([...manifest.matchAll(/"\/assets\/([^"?]+)"/g)].map((match) => match[1])),
   ];
 
-  assert.equal(assetNames.length, 35);
+  assert.equal(assetNames.length, 36);
   await Promise.all(
     assetNames.map((assetName) => access(new URL(`../public/assets/${assetName}`, import.meta.url))),
   );

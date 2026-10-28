@@ -103,7 +103,7 @@ function TableOfContents({
         <ol className="archive-project-list">
           {interactiveProjects.map((project, index) => (
             <li key={project.slug} style={{ "--menu-index": index } as CSSProperties}>
-              <Link href={project.href} tabIndex={open ? 0 : -1}>
+              <Link href={project.href} prefetch={false} tabIndex={open ? 0 : -1}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <strong>{project.title}</strong>
                 <em>{project.category}</em>
@@ -179,11 +179,17 @@ function ProjectScatter({
           } as CSSProperties;
           return (
             <figure
-              key={src}
+              key={`${src}-${index}`}
               className="scatter-image"
               style={style}
             >
-              <img src={src} decoding="async" alt={`${project.title} project preview ${index + 1}`} />
+              {project.artboardSlices ? (
+                <svg className="tiffe-preview-crop" role="img" aria-label={`${project.title} project preview ${index + 1}`}
+                  width="1326" height={project.artboardSlices[index][1] - project.artboardSlices[index][0]}
+                  viewBox={`0 ${project.artboardSlices[index][0]} 1326 ${project.artboardSlices[index][1] - project.artboardSlices[index][0]}`}>
+                  <image href={src} width="1326" height="11199" />
+                </svg>
+              ) : <img src={src} decoding="async" alt={`${project.title} project preview ${index + 1}`} />}
               <span>{String(index + 1).padStart(2, "0")}</span>
             </figure>
           );
@@ -240,7 +246,7 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
 
   const scheduleMenuClose = useCallback(() => {
     cancelMenuClose();
-    menuCloseTimer.current = setTimeout(() => setMenuOpen(false), 140);
+    menuCloseTimer.current = setTimeout(() => setMenuOpen(false), 180);
   }, [cancelMenuClose]);
 
   useEffect(() => {
@@ -248,6 +254,7 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
     const stage = root?.querySelector<HTMLElement>(".portfolio-stage");
     if (!stage) return;
     const projectWidgets = new Set<HTMLElement>();
+    const warmedImages = new Set<string>();
 
     const projectFromTarget = (target: EventTarget | null) => {
       const element = target instanceof Element ? target : null;
@@ -270,7 +277,12 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
       const match = projectFromTarget(target);
       if (!match) return;
       if (relatedTarget instanceof Node && match.anchor.contains(relatedTarget)) return;
-      match.project.images.forEach((src) => { const image = new Image(); image.src = src; });
+      match.project.images.forEach((src) => {
+        if (warmedImages.has(src)) return;
+        warmedImages.add(src);
+        const image = new Image();
+        image.src = src;
+      });
       const widget = match.anchor.closest<HTMLElement>(".widget-text-v3");
       widget?.classList.add("archive-project-hover");
       if (widget) projectWidgets.add(widget);
@@ -378,10 +390,10 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
         type="button"
         className="archive-folder-trigger"
         style={{
-          left: 184 * scale,
-          top: 63 * scale,
-          width: 607 * scale,
-          height: 484 * scale,
+          left: 240 * scale,
+          top: 150 * scale,
+          width: 465 * scale,
+          height: 365 * scale,
         }}
         aria-label={menuOpen ? "Close portfolio archive" : "Open portfolio archive"}
         aria-expanded={menuOpen}
@@ -395,7 +407,8 @@ export function ArchiveInteractions({ rootRef, scale }: ArchiveInteractionsProps
           setFolderHovered(false);
           scheduleMenuClose();
         }}
-        onFocus={() => {
+        onFocus={(event) => {
+          if (!event.currentTarget.matches(":focus-visible")) return;
           setFolderHovered(true);
           openMenu();
         }}
